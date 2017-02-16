@@ -1,6 +1,7 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 #include <cstdlib>
+#include <cstring>
 
 // Array-based waiting queue
 // Initialised with a max size and resizable when necessary

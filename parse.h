@@ -1,9 +1,8 @@
 #include "queue.h"
 #include "management.h"
-
+#include "parse_data.h"
 
 #define QUEUE_SIZE 8
 #define NUM_OF_FLAGS 8
 
-int parse_options(char** argv, options mt);
-int parse_listOfFiles(int argc, char** argv);
+int parse(int argc, char** argv, options* choices, char** targetfile,Queue<file_argument>* filelist);
