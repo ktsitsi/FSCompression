@@ -22,7 +22,8 @@ int parse(int argc, char** argv, options* choices, char** archive,Queue<file_arg
 			arglist.Enqueue(oargument);
 		}
 		else{
-			number_of_flags = i;
+			number_of_flags = i-1;
+			break;
 		}
 	}
 

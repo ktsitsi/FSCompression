@@ -4,7 +4,7 @@
 #include <cstring>
 
 #include "parse.h"
-
+#include "help.h"
 
 #define ARGNUM 4
 
@@ -27,6 +27,14 @@ int main(int argc, char** argv){
 		}
 	}
 
+	//Test case for the functionality of argument line
+	printf("Archive file :%s\n",archive);
+	file_argument temp_file;
+	while(!filelist.is_empty()){
+		temp_file = filelist.get_front();
+		printf("File: %s\n",temp_file.filename);
+		filelist.Pop();
+	}
 
 	return 0;
 }
