@@ -27,15 +27,17 @@ int main(int argc, char** argv){
 	}
 	
 	//Test case for the functionality of argument line
-	/*printf("Archive file :%s\n",archive);
+	printf("Archive file :%s\n",archive);
 	file_argument temp_file;
 	while(list_get_len(filelist) != 0){
 		list_dequeue(filelist,&temp_file);
 		printf("File: %s\n",temp_file.filename);
-	}*/
+	}
 	//list_destroy(&filelist);
-	create_hierarchical(filelist);
+	list_t* hierarchical_list;
+	create_hierarchical(filelist,&hierarchical_list);
 
 	list_destroy(&filelist);
+	list_destroy(&hierarchical_list);
 	return 0;
 }
