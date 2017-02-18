@@ -3,10 +3,11 @@
 #include <string.h>
 #include <stdio.h>
 
-int parse(int argc, char** argv, options* choices, char** archive,Queue<file_argument>* filelist){
+int parse(int argc, char** argv, options* choices, char** archive,list_t** filelist){
 	
-	Queue<flag_argument> arglist(QUEUE_SIZE);
-	flag_argument oargument, temp_argument;
+	list_t *arglist;
+	list_create(&arglist,sizeof(flag_argument),free);
+	flag_argument *oargument, temp_argument;
 	int number_of_flags = 0;
 
 	//Searching for flags validity, count them, enqueue them
@@ -18,8 +19,9 @@ int parse(int argc, char** argv, options* choices, char** archive,Queue<file_arg
 				printhelp();
 				return -1;
 			}
-			oargument.type = argv[i];
-			arglist.Enqueue(oargument);
+			oargument = (flag_argument*)malloc(sizeof(flag_argument));
+			oargument->type = argv[i];
+			list_enqueue(arglist,oargument);
 		}
 		else{
 			number_of_flags = --i;
@@ -35,8 +37,8 @@ int parse(int argc, char** argv, options* choices, char** archive,Queue<file_arg
 	}
 
 	//Recognize the flag list and initialize the options struct to store them
-	while(!arglist.is_empty()){
-		temp_argument = arglist.get_front();
+	while(list_get_len(arglist) != 0){
+		list_dequeue(arglist,&temp_argument);
 		if(!strcmp(temp_argument.type,"-c")){
 			choices->c = 1;
 		}
@@ -58,17 +60,21 @@ int parse(int argc, char** argv, options* choices, char** archive,Queue<file_arg
 		else if(!strcmp(temp_argument.type,"-j")){
 			choices->j = 1;
 		}
-		arglist.Pop();
 	}
-
+	list_destroy(&arglist);
 	//Store the destination archive file
 	*archive = argv[number_of_flags + 1];
-
+	
 	//Store in a filelist the source files or dirs names to be archived
-	file_argument fargument;
+	file_argument *fargument;
+
+	//Creates a list of files for the calling function and returns it in the filelist argument
+	//destroy should locate on the outter process
+	list_create(filelist,sizeof(file_argument),free);
 	for(int i = number_of_flags + 2; i<argc; i++){
-		fargument.filename = argv[i];
-		filelist->Enqueue(fargument);
+		fargument = (file_argument*)malloc(sizeof(file_argument));
+		fargument->filename = argv[i];
+		list_enqueue(*filelist,fargument);
 	}
 
 	return 0;

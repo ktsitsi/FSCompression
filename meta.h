@@ -4,5 +4,5 @@
 #include "list.h"
 
 int get_current_dir(char** cwd,char** current_dir);
-int create_hierarchical(Queue<file_argument> filelist)
+int create_hierarchical(list_t* filelist);
 #endif

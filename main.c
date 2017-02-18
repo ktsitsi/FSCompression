@@ -12,7 +12,7 @@ int main(int argc, char** argv){
 	//Defining functionality of the programm according command line
 	options choices;
 	char* archive;
-	Queue<file_argument> filelist(QUEUE_SIZE);
+	list_t *filelist;
 	if(parse(argc,argv,&choices,&archive,&filelist) < 0){
 		printhelp();
 		return -2;
@@ -25,17 +25,17 @@ int main(int argc, char** argv){
 			return -3;
 		}
 	}
-
+	
 	//Test case for the functionality of argument line
 	/*printf("Archive file :%s\n",archive);
 	file_argument temp_file;
-	while(!filelist.is_empty()){
-		temp_file = filelist.get_front();
+	while(list_get_len(filelist) != 0){
+		list_dequeue(filelist,&temp_file);
 		printf("File: %s\n",temp_file.filename);
-		filelist.Pop();
 	}*/
-
+	//list_destroy(&filelist);
 	create_hierarchical(filelist);
 
+	list_destroy(&filelist);
 	return 0;
 }
