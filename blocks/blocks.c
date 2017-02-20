@@ -44,15 +44,16 @@ ssize_t header_write(arc_header *hdr,int fd_arc)
     return n_write;
 }
 
-ssize_t file_archive(arc_header *hdr,int fd_file,int fd_arc)
+off_t file_archive(arc_header *hdr,int fd_file,int fd_arc)
 {
-    size_t block = hdr->meta_off / BLOCK_SIZE;
-    size_t block_off = hdr->meta_off % BLOCK_SIZE;
+    off_t block = hdr->meta_off / BLOCK_SIZE;
+    off_t block_off = hdr->meta_off % BLOCK_SIZE;
 
     lseek(fd_arc,block*BLOCK_SIZE,SEEK_SET);
 
     char buffer[BLOCK_SIZE];
-    ssize_t n_read,n_write,file_read = 0;
+    ssize_t n_read,n_write;
+    off_t file_read = 0;
 
     if((n_read = read(fd_arc,buffer,BLOCK_SIZE)) < 0) {
         perror("Reading file\n");
@@ -64,7 +65,7 @@ ssize_t file_archive(arc_header *hdr,int fd_file,int fd_arc)
         return -1;
     }
 
-    size_t content = block_off + n_read;
+    off_t content = block_off + n_read;
     memset(buffer+content,0,BLOCK_SIZE-content);
     lseek(fd_arc,block*BLOCK_SIZE,SEEK_SET);
 
@@ -88,21 +89,22 @@ ssize_t file_archive(arc_header *hdr,int fd_file,int fd_arc)
         return -1;
     }
 
+    off_t file_offset = hdr->meta_off;
     hdr->meta_off += file_read;
 
-    return file_read;
+    return file_offset;
 }
 
-ssize_t file_extract(int fd_arc,size_t off_arc,size_t file_size,int fd_file)
+off_t file_extract(int fd_arc,off_t off_arc,off_t file_size,int fd_file)
 {   
-    size_t block = off_arc / BLOCK_SIZE;
-    size_t block_off = off_arc % BLOCK_SIZE;
+    off_t block = off_arc / BLOCK_SIZE;
+    off_t block_off = off_arc % BLOCK_SIZE;
 
     lseek(fd_arc,block*BLOCK_SIZE,SEEK_SET);
 
     char buffer[BLOCK_SIZE];
-    ssize_t n_read,n_write,file_write = 0;
-    size_t true_read;
+    ssize_t n_read,n_write,true_read;
+    off_t file_write = 0;
 
     if((n_read = read(fd_arc,buffer,BLOCK_SIZE)) < 0) {
         perror("Reading file\n");

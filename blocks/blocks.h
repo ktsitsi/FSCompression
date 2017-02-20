@@ -8,15 +8,15 @@
 
 typedef struct arc_header
 {
-    size_t meta_off;
-    size_t total;
+    off_t meta_off;
+    off_t total;
 } arc_header;
 
 void header_init(arc_header *hdr);
 ssize_t header_load(arc_header *hdr, int fd_arc);
 ssize_t header_write(arc_header *hdr, int fd_arc);
 
-ssize_t file_archive(arc_header *hdr,int fd_file,int fd_arc);
-ssize_t file_extract(int fd_arc,size_t off_arc,size_t file_size,int fd_file);
+off_t file_archive(arc_header *hdr,int fd_file,int fd_arc);
+off_t file_extract(int fd_arc,off_t off_arc,off_t file_size,int fd_file);
 
 #endif
