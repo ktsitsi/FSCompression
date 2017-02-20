@@ -134,3 +134,82 @@ off_t file_extract(int fd_arc,off_t off_arc,off_t file_size,int fd_file)
     return file_write;
 
 }
+
+off_t load_metadata(arc_header *hdr,int fd_arc,char *metadata)
+{
+    off_t block = hdr->meta_off / BLOCK_SIZE;
+    off_t block_off = hdr->meta_off % BLOCK_SIZE;
+
+    lseek(fd_arc,block*BLOCK_SIZE,SEEK_SET);
+
+    char buffer[BLOCK_SIZE];
+    ssize_t n_read;
+    off_t meta_read = 0;
+
+    if((n_read = read(fd_arc,buffer,BLOCK_SIZE)) < 0) {
+        perror("Reading file\n");
+        return -1;
+    }
+
+    memcpy(metadata,buffer+block_off,BLOCK_SIZE-block_off);
+    meta_read += BLOCK_SIZE-block_off;
+
+    while((n_read = read(fd_arc,metadata+meta_read,BLOCK_SIZE)) > 0) {
+        meta_read += n_read;
+    }
+
+    if (n_read < 0) {
+        perror("Reading file\n");
+        return -1;
+    }
+
+    return meta_read;
+}
+
+off_t metadata_archive(arc_header *hdr,int fd_arc,char *metadata,size_t meta_size)
+{
+    off_t block = hdr->meta_off / BLOCK_SIZE;
+    off_t block_off = hdr->meta_off % BLOCK_SIZE;
+
+    lseek(fd_arc,block*BLOCK_SIZE,SEEK_SET);
+
+    char buffer[BLOCK_SIZE];
+    ssize_t n_read,n_write;
+    off_t meta_cur = 0;
+
+    if((n_read = read(fd_arc,buffer,BLOCK_SIZE)) < 0) {
+        perror("Reading file\n");
+        return -1;
+    }
+    
+    off_t true_size = MIN(meta_size,BLOCK_SIZE-block_off);
+    memcpy(buffer+block_off,metadata,true_size);
+
+    off_t content = block_off + true_size;
+    memset(buffer+content,0,BLOCK_SIZE-content);
+    lseek(fd_arc,block*BLOCK_SIZE,SEEK_SET);
+
+    if ((n_write = write(fd_arc,buffer,BLOCK_SIZE)) != BLOCK_SIZE) {
+        perror("Writing file to archive\n");
+        return -1;
+    }
+    meta_cur += true_size;
+
+    while(meta_cur < meta_size) { 
+        true_size = MIN(meta_size-meta_cur,BLOCK_SIZE);
+        memcpy(buffer,metadata+meta_cur,true_size);
+        memset(buffer+true_size,0,BLOCK_SIZE-true_size);
+        if ((n_write = write(fd_arc,metadata+meta_cur,BLOCK_SIZE)) != BLOCK_SIZE) {
+            perror("Writing file to archive\n");
+            return -1;
+        }
+        meta_cur += true_size;
+    }
+
+    if (n_read < 0) {
+        perror("Reading file\n");
+        return -1;
+    }
+
+    return lseek(fd_arc,0,SEEK_CUR);
+}
