@@ -68,7 +68,6 @@ ssize_t file_archive(arc_header *hdr,int fd_file,int fd_arc)
     memset(buffer+content,0,BLOCK_SIZE-content);
     lseek(fd_arc,block*BLOCK_SIZE,SEEK_SET);
 
-        printf("outside :buffer :%s\n",buffer);
     if ((n_write = write(fd_arc,buffer,BLOCK_SIZE)) != BLOCK_SIZE) {
         perror("Writing file to archive\n");
         return -1;
@@ -76,7 +75,6 @@ ssize_t file_archive(arc_header *hdr,int fd_file,int fd_arc)
     file_read += n_read;
 
     while((n_read = read(fd_file,buffer,BLOCK_SIZE)) > 0) { 
-        printf("inside :buffer :%s\n",buffer);
         memset(buffer+n_read,0,BLOCK_SIZE-n_read);
         if ((n_write = write(fd_arc,buffer,BLOCK_SIZE)) != BLOCK_SIZE) {
             perror("Writing file to archive\n");
@@ -119,7 +117,7 @@ ssize_t file_extract(int fd_arc,size_t off_arc,size_t file_size,int fd_file)
     file_write += n_write;
 
     while(file_write < file_size && (n_read = read(fd_arc,buffer,BLOCK_SIZE)) > 0) { 
-        size_t true_read = MIN(file_size - file_write,n_read);
+        true_read = MIN(file_size - file_write,n_read);
         if ((n_write = write(fd_file,buffer,true_read)) != true_read) {
             perror("Writing file to archive\n");
             return -1;
