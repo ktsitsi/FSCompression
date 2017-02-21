@@ -1,10 +1,10 @@
 #include "list.h"
+#include "metadata.h"
 #include <sys/types.h>
 #include <unistd.h>
 
-#define DENTRIES_NUM 16
 
-typedef struct dinode
+typedef struct dinode_disk
 {
     ino_t dinode_number;
     mode_t permissions;
@@ -15,16 +15,16 @@ typedef struct dinode
     off_t total_size;
     off_t file_off;
     size_t n_dentries;
-} dinode;
+} dinode_disk;
 
-typedef struct entry
+typedef struct entry_disk
 {
     char filename[256];
     ino_t dinode_num;
     off_t dinode_off;
-} entry;
+} entry_disk;
 
-typedef struct dentry {
+typedef struct dentry_disk {
     int length;
-    entry tuple_entry[DENTRIES_NUM];
-} dentry;
+    entry_disk tuple_entry[DENTRIES_NUM];
+} dentry_disk;
