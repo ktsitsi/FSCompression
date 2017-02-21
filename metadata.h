@@ -1,3 +1,6 @@
+#ifndef METADATA_H
+#define METADATA_H
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "list.h"
@@ -28,3 +31,4 @@ typedef struct dentry{
 }dentry;
 
 void dinode_stat_init(dinode* target,struct stat buffer);
+#endif

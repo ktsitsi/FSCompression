@@ -66,7 +66,7 @@ off_t file_archive(arc_header *hdr,int fd_file,int fd_arc)
         return -1;
     }
 
-    printf("n_read is %d\n",n_read);
+    //printf("n_read is %d\n",n_read);
     off_t content = block_off + n_read;
     memset(buffer+content,0,BLOCK_SIZE-content);
     lseek(fd_arc,block*BLOCK_SIZE,SEEK_SET);

@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include "parse.h"
 #include "help.h"
 #include "meta.h"
+#include "./blocks/convert.h"
 #include "metadata.h"
 
 #define ARGNUM 4
@@ -27,19 +30,36 @@ int main(int argc, char** argv){
 		}
 	}
 	
-	//Test case for the functionality of argument line
-	printf("Archive file :%s\n",archive);
-	file_argument temp_file;
-	/*while(list_get_len(filelist) != 0){
-		list_dequeue(filelist,&temp_file);
-		printf("File: %s\n",temp_file.filename);
-	}*/
-
 	list_t* hierarchical_list;
-	create_hierarchical(filelist,&hierarchical_list);
-	//Print the hierarchy list
 	
-	list_iter_t *hier_iter;
+	arc_header hdr;
+	header_init(&hdr);
+	//WARNING NOT TO FORGET TO CHANGE IT IN THE APPEND
+
+	int archive_fd = open(archive,O_CREAT|O_RDWR,0644);
+	if(archive_fd <0) return -4;
+	//WARNING WITH ARCHIVE FILE o_create
+	create_hierarchical(filelist,&hierarchical_list,&hdr,archive_fd);
+	
+	//WE GOT LIST
+
+	off_t meta_disk_size = list_array_size(hierarchical_list);
+	char *meta_array = (char*)malloc(meta_disk_size*sizeof(char));
+	list_to_array(hierarchical_list,meta_array);
+
+	//<PRINT LIST WITH CODE BELOW>
+	
+	list_destroy(&filelist);
+	list_destroy(&hierarchical_list);
+	
+	header_write(&hdr,archive_fd);
+	close(archive_fd);
+	return 0;
+}
+
+
+//Print the hierarchy list
+	/*list_iter_t *hier_iter;
 	list_iter_create(&hier_iter);
 	list_iter_init(hier_iter,hierarchical_list,FORWARD);
 	dinode* current;
@@ -57,8 +77,4 @@ int main(int argc, char** argv){
 			}
 		}
 	}
-	list_iter_destroy(&hier_iter);
-	list_destroy(&filelist);
-	list_destroy(&hierarchical_list);
-	return 0;
-}
+	list_iter_destroy(&hier_iter);*/
