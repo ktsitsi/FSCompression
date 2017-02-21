@@ -35,7 +35,6 @@ void tree_print(char *metadata)
         list_pop(stack,&cur_node); 
 
         entry_disk *en = cur_node._entry;
-
         unsigned int i;
         for (i=0;i<cur_node.depth;++i) printf("\t");
         printf("%s\n",en->filename);
@@ -47,8 +46,10 @@ void tree_print(char *metadata)
         for (i=0;i<n_dentries;++i){
             unsigned int j;
             for (j=0;j<d_en->length;++j) {
+                en = &(d_en->tuple_entry[j]);
+                if (!strcpy(en->filename,".") || !strcpy(en->filename,"..")) continue;
                 stack_node *node = malloc(sizeof(stack_node));
-                node->_entry = &(d_en->tuple_entry[j]);
+                node->_entry = en; 
                 node->depth = cur_node.depth + 1; 
                 list_push(stack,node);
             }

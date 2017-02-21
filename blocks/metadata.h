@@ -1,3 +1,6 @@
+#ifndef METADATA_H
+#define METADATA_H
+
 #include <sys/types.h>
 #include "list.h"
 #include <unistd.h>
@@ -8,8 +11,10 @@ typedef struct dinode{
 	mode_t permissions;
 	uid_t user_id;
 	gid_t group_id;
-	off_t total_size;
 	time_t time_of_access;
+
+	off_t total_size;
+    off_t file_off;
 	list_t* dentry_list;
 }dinode;
 
@@ -23,3 +28,5 @@ typedef struct dentry{
 	int length;
 	entry tuple_entry[DENTRIES_NUM];
 }dentry;
+
+#endif
