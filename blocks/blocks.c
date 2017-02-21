@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #define MIN(x,y) ((x)<(y) ? (x) : (y))
 
@@ -65,6 +66,7 @@ off_t file_archive(arc_header *hdr,int fd_file,int fd_arc)
         return -1;
     }
 
+    printf("n_read is %d\n",n_read);
     off_t content = block_off + n_read;
     memset(buffer+content,0,BLOCK_SIZE-content);
     lseek(fd_arc,block*BLOCK_SIZE,SEEK_SET);
@@ -135,7 +137,7 @@ off_t file_extract(int fd_arc,off_t off_arc,off_t file_size,int fd_file)
 
 }
 
-off_t load_metadata(arc_header *hdr,int fd_arc,char *metadata)
+off_t metadata_extract(arc_header *hdr,int fd_arc,char *metadata)
 {
     off_t block = hdr->meta_off / BLOCK_SIZE;
     off_t block_off = hdr->meta_off % BLOCK_SIZE;
@@ -166,7 +168,7 @@ off_t load_metadata(arc_header *hdr,int fd_arc,char *metadata)
     return meta_read;
 }
 
-off_t metadata_archive(arc_header *hdr,int fd_arc,char *metadata,size_t meta_size)
+off_t metadata_archive(arc_header *hdr,char *metadata,size_t meta_size,int fd_arc)
 {
     off_t block = hdr->meta_off / BLOCK_SIZE;
     off_t block_off = hdr->meta_off % BLOCK_SIZE;

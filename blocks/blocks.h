@@ -19,6 +19,7 @@ ssize_t header_write(arc_header *hdr, int fd_arc);
 off_t file_archive(arc_header *hdr,int fd_file,int fd_arc);
 off_t file_extract(int fd_arc,off_t off_arc,off_t file_size,int fd_file);
 
-off_t load_metadata(arc_header *hdr,int fd_arc,char *metadata);
-off_t metadata_archive(arc_header *hdr,int fd_arc,char *metadata,size_t meta_size);
+off_t metadata_extract(arc_header *hdr,int fd_arc,char *metadata);
+off_t metadata_archive(arc_header *hdr,char *metadata,size_t meta_size,int fd_arc);
+
 #endif

@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include <string.h>
 
 int main (void) 
 {
@@ -17,29 +16,28 @@ int main (void)
     printf("off_t size: %zd\n",sizeof(off_t));
     printf("size of header %zd\n",sizeof(arc_header));
     printf("metdata offset:%jd, size: %jd\n",(intmax_t)hdr.meta_off,(intmax_t)hdr.total);
-    header_init(&hdr);
+//    header_init(&hdr);
  //   header_write(&hdr,fd);
-//    header_load(&hdr,fd);
+    header_load(&hdr,fd);
     printf("metdata offset:%jd, size: %jd\n",(intmax_t)hdr.meta_off,(intmax_t)hdr.total);
 
-    int fd_1 = open("test.file",O_CREAT|O_RDWR,0644);
-    off_t far = file_archive(&hdr,fd_1,fd);
+    int fd_1 = open("test.rt",O_CREAT|O_RDWR,0644);
+    off_t far = file_extract(fd,512,6966,fd_1);
 //int far = file_extract(&hdr,512,
     printf("far is %jd\n",(intmax_t)far);
     
- int fd_2 = open("test2.file",O_CREAT|O_RDWR,0644);
-    far = file_archive(&hdr,fd_2,fd);
+ int fd_2 = open("test2.rt",O_CREAT|O_RDWR,0644);
+    far = file_extract(fd,7478,7,fd_2);
 //int far = file_extract(&hdr,512,
     printf("far is %jd\n",(intmax_t)far);
     close(fd_2);
     close(fd_1);
 
     printf("metdata offset:%jd, size: %jd\n",(intmax_t)hdr.meta_off,(intmax_t)hdr.total);
-    char *meta = "salamala";
-    far = metadata_archive(&hdr,meta,strlen(meta)+1,fd);
+    char meta[500];
+    far = metadata_extract(&hdr,fd,meta);
     printf("far is %jd\n",(intmax_t)far);
-    printf("metdata offset:%jd, size: %jd\n",(intmax_t)hdr.meta_off,(intmax_t)hdr.total);
-
+//    printf("meta is %s\n",meta);
     header_write(&hdr,fd);
     close(fd);
 }
