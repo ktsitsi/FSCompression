@@ -127,7 +127,8 @@ void insert_hierarchical_rec(list_t ** hierarhy_list,dinode* leafdinode,char* fi
 					dentry* last_dentry = list_iter_next(dentries_iter);
 
 					dinode* newdinode = (dinode*)malloc(sizeof(dinode));
-					//TODO: INIT THE STATS OF THE FILE
+					//INIT THE STATS OF THE FILE
+					dinode_stat_init(newdinode,buffer);
 					list_create(&(newdinode->dentry_list),sizeof(dentry),free);
 					dentry *init_entry = (dentry*)malloc(sizeof(dentry));
 					init_entry->length = 2;
@@ -138,8 +139,8 @@ void insert_hierarchical_rec(list_t ** hierarhy_list,dinode* leafdinode,char* fi
 					list_enqueue(newdinode->dentry_list,init_entry);
 					
 					if(last_dentry->length < DENTRIES_NUM){
-						strcpy((last_dentry->tuple_entry[last_dentry->length -1]).filename,dp->d_name);
-						(last_dentry->tuple_entry[last_dentry->length -1]).dinode_idx = newdinode;
+						strcpy((last_dentry->tuple_entry[last_dentry->length]).filename,dp->d_name);
+						(last_dentry->tuple_entry[last_dentry->length]).dinode_idx = newdinode;
 						last_dentry->length++; 
 					}
 					else{
@@ -166,7 +167,6 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 	char initial_path[PATH_MAX];
 	strcpy(initial_path,insert_file_path);
 	if(!strcmp(insert_file_path,"")){
-		//TODO:The whole cwd should be stored
 		printf("insert hierarchical: The whole cwd was given\n");
 		list_iter_t *dinode_iter;
 		list_iter_t *dentries_iter;
@@ -200,6 +200,7 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 		int i;
 		dinode* lastdinode;
 		//Dentry list of cwd for first path token
+
 		while(path_token != NULL){
 			int found = 0;
 			list_iter_init(dentries_iter,current_din->dentry_list,FORWARD);
@@ -213,20 +214,15 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 					}
 				}
 			}
-			if(found == 1){
-				//means in the current_din we have the dinode pointer
-				path_token += strlen(path_token)+1;
-				path_token = strtok(path_token, "/\n");
-				continue;
-
-			}
-			else{
+			if(found == 0){
 				//The path token is not in the hierarhy
+				printf("The token %s is not in the hierarhy\n",path_token);
 				list_iter_init(dentries_iter,current_din->dentry_list,BACKWARD);
 				current_den = (dentry*)list_iter_next(dentries_iter);
 
 				dinode *newdinode = (dinode*)malloc(sizeof(dinode));
 				//TODO: INIT THE STATS OF THE FILE
+				
 				list_create(&(newdinode->dentry_list),sizeof(dentry),free);
 				dentry *init_entry = (dentry*)malloc(sizeof(dentry));
 				init_entry->length = 2;
@@ -238,12 +234,11 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 
 				if(current_den->length < DENTRIES_NUM){
 					//Put it in this dentry element
-					strcpy((current_den->tuple_entry[current_den->length - 1]).filename,path_token);
-					(current_den->tuple_entry[current_den->length - 1]).dinode_idx = newdinode;
+					strcpy((current_den->tuple_entry[current_den->length]).filename,path_token);
+					(current_den->tuple_entry[current_den->length]).dinode_idx = newdinode;
 					current_den->length++; 
 				}
 				else{
-
 					dentry* new_dentry = (dentry*)malloc(sizeof(dentry));
 					new_dentry->length = 1;
 					strcpy((new_dentry->tuple_entry[0]).filename,path_token);
@@ -252,7 +247,9 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 				}
 				lastdinode = newdinode;
 				list_enqueue(*hierarhy_list,newdinode);
+				current_din = newdinode;
 			}
+			path_token = strtok(NULL, "/\n");
 		}
 
 		//The last dinode has the pointer to the dinode of the leaf of the path

@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <sys/stat.h>
 #include "list.h"
 #include <unistd.h>
 #include <linux/limits.h>
@@ -25,3 +26,5 @@ typedef struct dentry{
 	int length;
 	entry tuple_entry[DENTRIES_NUM];
 }dentry;
+
+void dinode_stat_init(dinode* target,struct stat buffer);
