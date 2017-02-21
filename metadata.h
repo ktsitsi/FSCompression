@@ -10,6 +10,7 @@ typedef struct dinode{
 	uid_t user_id;
 	gid_t group_id;
 	off_t total_size;
+	off_t file_off;
 	time_t time_of_access;
 	list_t* dentry_list;
 }dinode;

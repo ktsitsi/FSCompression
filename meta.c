@@ -108,7 +108,7 @@ void insert_hierarchical_rec(list_t ** hierarhy_list,dinode* leafdinode,char* fi
 	struct stat buffer;
 	lstat(filepath,&buffer);
 	if(S_ISREG(buffer.st_mode)){
-		printf("We reached file!\n");
+		printf("We reached file %s\n",filepath);
 		//regular file create the dinode and assign data offset
 		return;
 	}
@@ -163,9 +163,11 @@ void insert_hierarchical_rec(list_t ** hierarhy_list,dinode* leafdinode,char* fi
 
 void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 	struct stat buffer;
+	char initial_path[PATH_MAX];
+	strcpy(initial_path,insert_file_path);
 	if(!strcmp(insert_file_path,"")){
 		//TODO:The whole cwd should be stored
-		printf("insert hierarchical: ")
+		printf("insert hierarchical: The whole cwd was given\n");
 		list_iter_t *dinode_iter;
 		list_iter_t *dentries_iter;
 		list_iter_create(&dinode_iter);
@@ -177,7 +179,7 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 
 		//Pointer to cwd of the list e.g ad
 		current_din = (current_den->tuple_entry[0]).dinode_idx;
-		insert_hierarchical_rec(hierarhy_list,current_din,"./");
+		insert_hierarchical_rec(hierarhy_list,current_din,".");
 		list_iter_destroy (&dinode_iter);
 		list_iter_destroy (&dentries_iter);
 	}
@@ -256,7 +258,8 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 		//The last dinode has the pointer to the dinode of the leaf of the path
 		//insert file path has the whole file
 		char rec_filepath_arg[PATH_MAX];
-		sprintf(rec_filepath_arg,"./%s",insert_file_path);
+		sprintf(rec_filepath_arg,"./%s",initial_path);
+		printf("The recfilepath given is %s\n",rec_filepath_arg);
 		insert_hierarchical_rec(hierarhy_list,lastdinode,rec_filepath_arg);
 		//Decide if the leaf node is file or dir
 		list_iter_destroy (&dinode_iter);
