@@ -161,9 +161,7 @@ void insert_hierarchical_rec(list_t ** hierarhy_list,dinode* leafdinode,char* fi
 	return;
 }
 
-
 void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
-	struct stat buffer;
 	char initial_path[PATH_MAX];
 	strcpy(initial_path,insert_file_path);
 	if(!strcmp(insert_file_path,"")){
@@ -199,10 +197,13 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 		char *path_token = strtok(insert_file_path,"/\n");
 		int i;
 		dinode* lastdinode;
+		struct stat buffer;
 		//Dentry list of cwd for first path token
-
+		char current_path[PATH_MAX];
+		sprintf(current_path,"./%s",path_token);
 		while(path_token != NULL){
 			int found = 0;
+			printf("Current path is %s\n",current_path);
 			list_iter_init(dentries_iter,current_din->dentry_list,FORWARD);
 			while((current_den = list_iter_next(dentries_iter)) != NULL){
 				for(i=0;i<current_den->length;i++){
@@ -222,7 +223,8 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 
 				dinode *newdinode = (dinode*)malloc(sizeof(dinode));
 				//TODO: INIT THE STATS OF THE FILE
-				
+				lstat(current_path,&buffer);
+				dinode_stat_init(newdinode,buffer);				
 				list_create(&(newdinode->dentry_list),sizeof(dentry),free);
 				dentry *init_entry = (dentry*)malloc(sizeof(dentry));
 				init_entry->length = 2;
@@ -250,6 +252,7 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path){
 				current_din = newdinode;
 			}
 			path_token = strtok(NULL, "/\n");
+			sprintf(current_path,"%s/%s",current_path,path_token);
 		}
 
 		//The last dinode has the pointer to the dinode of the leaf of the path

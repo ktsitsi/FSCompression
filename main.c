@@ -39,7 +39,7 @@ int main(int argc, char** argv){
 	create_hierarchical(filelist,&hierarchical_list);
 	//Print the hierarchy list
 	
-	/*list_iter_t *hier_iter;
+	list_iter_t *hier_iter;
 	list_iter_create(&hier_iter);
 	list_iter_init(hier_iter,hierarchical_list,FORWARD);
 	dinode* current;
@@ -57,7 +57,7 @@ int main(int argc, char** argv){
 			}
 		}
 	}
-	list_iter_destroy(&hier_iter);*/
+	list_iter_destroy(&hier_iter);
 	list_destroy(&filelist);
 	list_destroy(&hierarchical_list);
 	return 0;
