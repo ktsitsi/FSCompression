@@ -41,7 +41,7 @@ void tree_print(char *metadata)
 
         di_n = (dinode_disk*)(metadata + en->dinode_off);
         size_t n_dentries = di_n->n_dentries;
-        d_en = (dentry_disk*)(di_n + sizeof(dinode));
+        d_en = (dentry_disk*)(di_n + sizeof(dinode_disk));
 
         for (i=0;i<n_dentries;++i){
             unsigned int j;
