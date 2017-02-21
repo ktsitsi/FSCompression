@@ -55,7 +55,7 @@ void list_to_array(list_t *dinodes,char *array)
         dn_disk.n_dentries = list_get_len(dn.dentry_list);
 
         memcpy(array+new_off,&dn_disk,sizeof(dinode_disk));
-        write_off += sizeof(dinode_disk);
+        write_off = new_off + sizeof(dinode_disk);
         new_off += sizeof(dinode_disk) + 
             list_get_len(dn.dentry_list)*sizeof(dentry_disk);
 
@@ -72,8 +72,9 @@ void list_to_array(list_t *dinodes,char *array)
                 strcpy(entries[i].filename,en->filename);
                 entries[i].dinode_num = en->dinode_num;
                 if (!strcpy(en->filename,".") || !strcpy(en->filename,"..")) continue;
-                entries[i].dinode_off = new_off;
-                new_off += sizeof(dinode_disk) + list_get_len(en->dinode_idx->dentry_list);
+                off_t entry_off = new_off;
+                entries[i].dinode_off = entry_off;
+                entry_off += sizeof(dinode_disk) + list_get_len(en->dinode_idx->dentry_list);
                 list_enqueue(queue,en->dinode_idx);
             }
             memcpy(&(de_d.tuple_entry),entries,DENTRIES_NUM*sizeof(entry_disk));
