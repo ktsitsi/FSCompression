@@ -1,7 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "metadata.h"
+#include "parse_data.h"
 #include "meta.h"
+#include <linux/limits.h>
 #include <inttypes.h>
 
 #define CWD_LENGTH 128
@@ -18,6 +21,44 @@ int get_current_dir(char** cwd,char** current_dir){
 		path_part = strtok(NULL,"/\n");
 	}
 	return 0;
+}
+
+char* normalize_path(char* resolved_path, char* cwd){
+	char *rtoken;
+	char *cwdtoken;
+	char *store_resolved = (char*)calloc(PATH_MAX,sizeof(char));
+	rtoken = strtok(resolved_path,"/\n");
+	cwdtoken = strtok(cwd,"/\n");
+	int counter = 0;
+	while(!strcmp(rtoken, cwdtoken)){
+	    /* Update strtok pointers */
+	    rtoken += strlen(rtoken) + 1;
+	    sprintf(store_resolved,"%s",rtoken);
+	    cwdtoken += strlen(cwdtoken) + 1;
+	    /* Get next token */
+	    rtoken = strtok(rtoken, "/\n");
+	    cwdtoken = strtok(cwdtoken, "/\n");
+	    counter++;
+	    if(cwdtoken == NULL && rtoken != NULL){
+	    	//resolved path is PREDECESSOR of cwd
+	    	break;
+	    }
+	    if(rtoken == NULL && cwdtoken == NULL){
+	    	//resoved is the same path with cwd
+	    	break;
+	    }
+	    if(rtoken == NULL && cwdtoken != NULL){
+	    	//resolved path is ancestor of the cwd FAILURE
+	    	return NULL;
+	    }
+	}
+
+	if(rtoken != NULL && cwdtoken != NULL){
+		//different branch of two paths
+		return NULL;
+	}
+	//printf("Similar to depth %d\n",counter);
+	return store_resolved;
 }
 
 void dinodes_list_init(list_t **hierarhy_list,char* current_dir){
@@ -62,52 +103,48 @@ void dinodes_list_init(list_t **hierarhy_list,char* current_dir){
 
 }
 
-/*test_function(){
-
-	list_iter_t *hier_iter;
-	list_iter_create(&hier_iter);
-	list_iter_init(hier_iter,*hierarhy_list,FORWARD);
-
-	dinode *temp;
-	list_iter_t *dentry_iter;
-	list_iter_create(&dentry_iter);
-	dentry *temp2;
-	while((temp = list_iter_next(hier_iter)) != NULL){
-		printf("Dinode number: %ju\n", (uintmax_t)temp->dinode_number);
-		list_iter_init(dentry_iter,temp->dentry_list,FORWARD);
-		while((temp2 = list_iter_next(dentry_iter)) != NULL){
-			printf("Filename0:%s\n",(temp2->tuple_entry[0]).filename);
-			printf("Filename1:%s\n",(temp2->tuple_entry[1]).filename);
-		}
-	}
-
-	list_iter_destroy(&hier_iter);
-	list_iter_destroy(&dentry_iter);
-}*/
-
 int create_hierarchical(list_t *filelist, list_t** hierarhy_list){
 	char *cwd = (char*)malloc(CWD_LENGTH*sizeof(char));
 	char *current_dir;
 	if(get_current_dir(&cwd,&current_dir) < 0){
 		return -1;
 	}
-
-	//printf("Current working dir is %s\n",current_dir);
-
-	//Create a picture of the current state of the filesystem
-	//starting from that cwd as root
-
-	//This representation will be a list of dinodes and dentries
-	//all stored in memory with pointers and after that will be converted
-	//in blocks pointers->offsets so it can be stored in the archive file
-
-	//Now begin from cwd and first create the dinodes for the predecessors
-	//and link them in the list in a recursive manner for all until the end of depth
-	//predecessors are coming from the filelist
-
 	//Initialize dinode list with 2 first naive nodes of pseudo and cwd
 	dinodes_list_init(hierarhy_list,current_dir);
+	
+	list_iter_t *file_iterator;
+	list_iter_create(&file_iterator);
+	list_iter_init(file_iterator,filelist,FORWARD);
 
+	//For al files in the command line
+	file_argument* cur_file;
+	printf("Length list:%d\n",list_get_len(filelist));
+	while((cur_file = (file_argument*)list_iter_next(file_iterator)) != NULL){
+		//find real path of this argument
+		char *resolved_path = (char*)calloc(PATH_MAX,sizeof(char));
+        realpath(cur_file->filename, resolved_path); 
+       	char* normalized_filepath; 			//!!!!!!!!!carefull to free normalized path!!!!!!!!!
+		normalized_filepath = normalize_path(resolved_path,cwd);
+		if(normalized_filepath != NULL){
+			if(!strcmp(normalized_filepath,"")){
+				printf("Same directory\n");
+			}
+			else{
+				printf("The path in the hierarchy is: %s\n",normalized_filepath);
+			}
+		}
+		else{
+			printf("Error in normalization of the path\n");
+			return -2;
+		}
+
+		
+
+		free(resolved_path);
+		free(normalized_filepath);
+	}
+
+	list_iter_destroy(&file_iterator);
 	free(cwd);
 	return 0;
 }
