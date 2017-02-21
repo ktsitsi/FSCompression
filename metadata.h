@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include "list.h"
 #include <unistd.h>
+#include <linux/limits.h>
 #define DENTRIES_NUM 16
 
 typedef struct dinode{
@@ -14,7 +15,7 @@ typedef struct dinode{
 }dinode;
 
 typedef struct entry{
-	char filename[256];
+	char filename[PATH_MAX];
 	ino_t dinode_num;
 	dinode* dinode_idx;
 }entry;
