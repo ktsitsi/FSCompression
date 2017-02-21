@@ -8,7 +8,7 @@ typedef struct convert_node
     off_t off;
 } convert_node;
 
-off_t list_disk_size(list_t *dinodes)
+off_t list_array_size(list_t *dinodes)
 {
     list_iter_t *iter;
     list_iter_create(&iter);
@@ -54,7 +54,7 @@ void list_to_array(list_t *dinodes,char *array)
         dn_disk.file_off = dn.file_off;
         dn_disk.n_dentries = list_get_len(dn.dentry_list);
 
-        memcpy(array,&dn_disk,sizeof(dinode_disk));
+        memcpy(array+new_off,&dn_disk,sizeof(dinode_disk));
         write_off += sizeof(dinode_disk);
         new_off += sizeof(dinode_disk) + 
             list_get_len(dn.dentry_list)*sizeof(dentry_disk);
