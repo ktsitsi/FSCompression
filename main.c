@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include "meta.h"
 #include "./blocks/convert.h"
+#include "./blocks/search.h"
 #include "metadata.h"
 
 #include "./blocks/metadata_disk.h"
@@ -138,7 +139,7 @@ int main(int argc, char** argv){
     list_iter_destroy(&de_iter);
     list_destroy(&queue);
 	
-
+    tree_print(array);
 
 	//Array to list
 

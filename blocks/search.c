@@ -36,24 +36,24 @@ void tree_print(char *metadata)
 
         entry_disk *en = cur_node._entry;
         unsigned int i;
-        for (i=0;i<cur_node.depth;++i) printf("\t");
+        for (i=0;i<cur_node.depth;++i) printf("----");
         printf("%s\n",en->filename);
 
         di_n = (dinode_disk*)(metadata + en->dinode_off);
         size_t n_dentries = di_n->n_dentries;
-        d_en = (dentry_disk*)(di_n + sizeof(dinode_disk));
+        d_en = (dentry_disk*)((char*)di_n + sizeof(dinode_disk));
 
         for (i=0;i<n_dentries;++i){
             unsigned int j;
             for (j=0;j<d_en->length;++j) {
                 en = &(d_en->tuple_entry[j]);
-                if (!strcpy(en->filename,".") || !strcpy(en->filename,"..")) continue;
+                if (!strcmp(en->filename,".") || !strcmp(en->filename,"..")) continue;
                 stack_node *node = malloc(sizeof(stack_node));
                 node->_entry = en; 
                 node->depth = cur_node.depth + 1; 
                 list_push(stack,node);
             }
-            d_en += (sizeof(dentry_disk));
+            d_en = (dentry_disk*)((char*)(d_en)+sizeof(dentry_disk));
         }
 
     }
