@@ -109,12 +109,10 @@ void insert_hierarchical_rec(list_t * hierarhy_list,dinode* leafdinode,char* fil
 	struct stat buffer;
 	lstat(filepath,&buffer);
 	if(S_ISREG(buffer.st_mode)){
-		printf("We reached file %s\n",filepath);
+		//printf("We reached file %s\n",filepath);
 		int fd = open(filepath,O_CREAT|O_RDWR,0644);
 		if(fd<0) printf("Couldn't open the file\n");
 		leafdinode->file_off = file_archive(hdr,fd,archive_fd);
-
-		printf("ARCHIVE\n");
 		close(fd);
 		//regular file create the dinode and assign data offset
 		return;
@@ -177,7 +175,7 @@ void insert_hierarchical(list_t *hierarhy_list,char* insert_file_path,arc_header
 	char initial_path[PATH_MAX];
 	strcpy(initial_path,insert_file_path);
 	if(!strcmp(insert_file_path,"")){
-		printf("insert hierarchical: The whole cwd was given\n");
+		//printf("insert hierarchical: The whole cwd was given\n");
 		list_iter_t *dinode_iter;
 		list_iter_t *dentries_iter;
 		list_iter_create(&dinode_iter);
@@ -217,7 +215,7 @@ void insert_hierarchical(list_t *hierarhy_list,char* insert_file_path,arc_header
 		sprintf(current_path,"./%s",path_token);
 		while(path_token != NULL){
 			int found = 0;
-			printf("Current path is %s\n",current_path);
+			//printf("Current path is %s\n",current_path);
 			list_iter_init(dentries_iter,current_din->dentry_list,FORWARD);
 			while((current_den = list_iter_next(dentries_iter)) != NULL){
 				for(i=0;i<current_den->length;i++){
@@ -234,7 +232,7 @@ void insert_hierarchical(list_t *hierarhy_list,char* insert_file_path,arc_header
 			}
 			if(found == 0){
 				//The path token is not in the hierarhy
-				printf("The token %s is not in the hierarhy\n",path_token);
+				//printf("The token %s is not in the hierarhy\n",path_token);
 				list_iter_init(dentries_iter,current_din->dentry_list,BACKWARD);
 				current_den = (dentry*)list_iter_next(dentries_iter);
 
@@ -282,15 +280,11 @@ void insert_hierarchical(list_t *hierarhy_list,char* insert_file_path,arc_header
 		//insert file path has the whole file
 		char rec_filepath_arg[PATH_MAX];
 		sprintf(rec_filepath_arg,"./%s",initial_path);
-		printf("The recfilepath given is %s\n",rec_filepath_arg);
+		//printf("The recfilepath given is %s\n",rec_filepath_arg);
 		insert_hierarchical_rec(hierarhy_list,lastdinode,rec_filepath_arg,hdr,archive_fd);
 		//Decide if the leaf node is file or dir
-
-		printf("RETURN FROM THE DEAD\n");
 		list_iter_destroy (&dinode_iter);
 		list_iter_destroy (&dentries_iter);
-
-		printf("WELCOME\n");
 	}
 }
 
@@ -309,21 +303,21 @@ int create_hierarchical(list_t *filelist, list_t* hierarhy_list,arc_header* hdr,
 
 	//For al files in the command line
 	file_argument* cur_file;
-	printf("Length list:%d\n",list_get_len(filelist));
+	//printf("Length list:%d\n",list_get_len(filelist));
 	struct stat buffer;
 	while((cur_file = (file_argument*)list_iter_next(file_iterator)) != NULL){
 		//find reals path of this argument
 		char *resolved_path = (char*)calloc(PATH_MAX,sizeof(char));
-		printf("create hierarchical: Resolved:%s\n",resolved_path);
+		//printf("create hierarchical: Resolved:%s\n",resolved_path);
 		realpath(cur_file->filename, resolved_path);
-		printf("create hierarchical: RealPath:%s\n",resolved_path);
+		//printf("create hierarchical: RealPath:%s\n",resolved_path);
 		if(lstat(resolved_path,&buffer) == 0){
 			//File exists in the filesystem
 			char* normalized_filepath;
 			normalized_filepath = normalize_path(resolved_path,cwd);
-			printf("create hierarchical: RealPath:%s\n",normalized_filepath);
+			//printf("create hierarchical: RealPath:%s\n",normalized_filepath);
 			if(normalized_filepath != NULL){
-				printf("create hierarchical: Before insert hierarchical\n");
+				//printf("create hierarchical: Before insert hierarchical\n");
 				insert_hierarchical(hierarhy_list,normalized_filepath,hdr,archive_fd);
 				free(normalized_filepath);
 			}
@@ -341,6 +335,5 @@ int create_hierarchical(list_t *filelist, list_t* hierarhy_list,arc_header* hdr,
 
 	list_iter_destroy(&file_iterator);
 	free(cwd);
-	printf("TAKE ME DOWN\n");
 	return 0;
 }

@@ -3,7 +3,7 @@
 
 #include "list.h"
 #include "metadata.h"
-#include "./blocks/blocks.h"
+#include "blocks.h"
 
 int get_current_dir(char** cwd,char** current_dir);
 int create_hierarchical(list_t* filelist, list_t* hierarchical,arc_header *hdr,int archive_fd,int operation);

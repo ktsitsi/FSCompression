@@ -42,7 +42,7 @@ int main(int argc, char** argv){
 	arc_header hdr;
 	int archive_fd; 
     if(choices.c){
-        printf("CREATE\n");
+        printf("creating...\n");
         list_iter_t *hier_iter;
         list_iter_create(&hier_iter);
         list_iter_init(hier_iter,hierarchical_list,FORWARD);
@@ -132,18 +132,18 @@ int main(int argc, char** argv){
         free(array);
     }
     if(choices.p){
-        printf("TREE PRINT\n");
+        printf("Tree Printing...\n");
         archive_fd = open(archive,O_RDWR,0644);
         if(archive_fd <0) return -5;
         header_load(&hdr, archive_fd);
-        printf("total=%jd,total=%jd\n",(intmax_t)(hdr.total),(intmax_t)(hdr.meta_off));
+        //printf("total=%jd,total=%jd\n",(intmax_t)(hdr.total),(intmax_t)(hdr.meta_off));
         char *array = malloc((hdr.total - hdr.meta_off)*sizeof(char));
         metadata_extract(&hdr,archive_fd,array);
         tree_print(array,0);
         free(array);
     }
     if(choices.q){
-        printf("QUERY\n");
+        printf("query...\n");
         archive_fd = open(archive,O_RDWR,0644);
         if(archive_fd <0) return -5;
         header_load(&hdr, archive_fd);
@@ -161,7 +161,7 @@ int main(int argc, char** argv){
         free(array);
     }
     if(choices.a){
-        printf("ADD\n");
+        printf("Adding...\n");
         archive_fd = open(archive,O_RDWR,0644);
         if(archive_fd <0) return -5;
         header_load(&hdr, archive_fd);
@@ -230,9 +230,6 @@ int main(int argc, char** argv){
 
         create_hierarchical(filelist,newhlist,&hdr,archive_fd,0);
         //NEWHLIST HIERARCHY
-        printf("SUCCESS");
-
-
         //List To Array
         size_t array_size_target = list_array_size(newhlist);
         char* array_target = (char*)malloc(array_size_target*sizeof(char));
@@ -313,7 +310,7 @@ int main(int argc, char** argv){
         free(array);
     }
     if(choices.m){
-        printf("M\n");
+        printf("Printing....\n");
         archive_fd = open(archive,O_RDWR,0644);
         if(archive_fd <0) return -5;
         header_load(&hdr, archive_fd);
