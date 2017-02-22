@@ -22,6 +22,8 @@ off_t list_array_size(list_t *dinodes)
             list_get_len(di_n->dentry_list) * sizeof(dentry_disk);
 
     list_iter_destroy(&iter);
+
+    return total_size;
 }
 
 void list_to_array(list_t *dinodes,char *array) 
