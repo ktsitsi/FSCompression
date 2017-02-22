@@ -11,7 +11,8 @@ int parse(int argc, char** argv, options* choices, char** archive,list_t** filel
 	int number_of_flags = 0;
 
 	//Searching for flags validity, count them, enqueue them
-	for(int i=1; i<argc; i++){
+        int i;
+	for(i=1; i<argc; i++){
 		if(argv[i][0] == '-'){
 			//This is flag
 			if(strcmp(argv[i],"-c") && strcmp(argv[i],"-a") && strcmp(argv[i],"-x") && strcmp(argv[i],"-m") && strcmp(argv[i],"-d") && strcmp(argv[i],"-p") && strcmp(argv[i],"-j")){
@@ -71,7 +72,7 @@ int parse(int argc, char** argv, options* choices, char** archive,list_t** filel
 	//Creates a list of files for the calling function and returns it in the filelist argument
 	//destroy should locate on the outter process
 	list_create(filelist,sizeof(file_argument),free);
-	for(int i = number_of_flags + 2; i<argc; i++){
+	for(i = number_of_flags + 2; i<argc; i++){
 		fargument = (file_argument*)malloc(sizeof(file_argument));
 		fargument->filename = argv[i];
 		list_enqueue(*filelist,fargument);
