@@ -2,11 +2,7 @@
 #include "metadata_disk.h"
 #include "list.h"
 
-typedef struct convert_node
-{
-    entry *_entry;
-    off_t off;
-} convert_node;
+
 
 off_t list_array_size(list_t *dinodes)
 {
@@ -25,7 +21,7 @@ off_t list_array_size(list_t *dinodes)
 
     return total_size;
 }
-
+/*
 void list_to_array(list_t *dinodes,char *array) 
 {
     
@@ -176,3 +172,4 @@ void array_to_list(char *array,list_t **dinodes)
     }
     list_destroy(&stack);
 }
+*/
