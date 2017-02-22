@@ -28,6 +28,28 @@ off_t list_array_size(list_t *dinodes)
 
 void list_to_array(list_t *dinodes,char *array) 
 {
+    
+    list_iter_t *hier_iter;
+    list_iter_create(&hier_iter);
+    list_iter_init(hier_iter,dinodes,FORWARD);
+    dinode* current;
+
+    list_iter_t* dentries_iter;
+    list_iter_create(&dentries_iter);
+    dentry* current_dentry;
+    int i;
+    while((current = list_iter_next(hier_iter)) != NULL){
+        list_iter_init(dentries_iter,current->dentry_list,FORWARD);
+        while((current_dentry = list_iter_next(dentries_iter))!= NULL){
+            printf("The length is %d\n",current_dentry->length);
+            for(i=0;i<current_dentry->length;i++){
+                printf("File %d: %s\n",i,(current_dentry->tuple_entry[i]).filename);
+            }
+        }
+    }
+    list_iter_destroy(&hier_iter);
+
+
     list_iter_t *di_iter;
     list_iter_create(&di_iter);
     list_iter_init(di_iter,dinodes,FORWARD);
@@ -75,7 +97,9 @@ void list_to_array(list_t *dinodes,char *array)
                 strcpy(entries[i].filename,en->filename);
                 entries[i].dinode_num = en->dinode_num;
                 if (!strcmp(en->filename,".") || !strcmp(en->filename,"..")) continue;
+                //off_t entry_off = dinode_off;
                 entries[i].dinode_off = entry_off;
+                printf("Current %s",entries[i].filename);
                 entry_off += sizeof(dinode_disk) + list_get_len(en->dinode_idx->dentry_list);
                 list_enqueue(queue,en->dinode_idx);
             }
@@ -106,6 +130,7 @@ void array_to_list(char *array,list_t **dinodes)
         convert_node cnode;
         list_pop(stack,&cnode);
         dinode_disk *di_d = (dinode_disk*)array + cnode.off;
+        printf("Cnodeoff %jd\n",cnode.off);
 
         dinode *di = malloc(sizeof(dinode));
         if (cnode._entry != NULL) (cnode._entry)->dinode_idx = di;

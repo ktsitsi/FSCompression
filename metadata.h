@@ -22,7 +22,7 @@ typedef struct dinode{
 typedef struct entry{
 	char filename[PATH_MAX];
 	ino_t dinode_num;
-	dinode* dinode_idx;
+	dinode * dinode_idx;
 }entry;
 
 typedef struct dentry{

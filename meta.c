@@ -63,12 +63,28 @@ char* normalize_path(char* resolved_path, char* cwd){
 	return store_resolved;
 }
 
-void dinodes_list_init(list_t **hierarhy_list,char* current_dir){
+void dinodes_list_init(list_t *hierarhy_list,char* current_dir){
+
+	
+	//Create-Init the first pseudoroot dinode
+	dinode* pseudoroot = (dinode*)malloc(sizeof(dinode));
+	pseudoroot->dinode_number = 0;
 
 	//Initialize the current directory dinode
 	dinode* cwd_din = (dinode*)malloc(sizeof(dinode));
 	cwd_din->dinode_number = 1;
 	//Take all the necessary info from lstat
+
+	dentry *rootindex = (dentry*)malloc(sizeof(dentry));
+
+	strcpy((rootindex->tuple_entry[0]).filename,current_dir);
+	(rootindex->tuple_entry[0]).dinode_num = 1;
+	(rootindex->tuple_entry[0]).dinode_idx = cwd_din;
+	rootindex->length = 1;
+
+	//Enqueue the dentry of pseudo root in the dinode of pseudoroot
+	list_create(&(pseudoroot->dentry_list),sizeof(dentry),free);
+	list_enqueue(pseudoroot->dentry_list,rootindex);
 	
 	//Init the cyclic reference of the cwd with 2 entries in the dentry
 	dentry *cwdidx = (dentry*)malloc(sizeof(dentry));
@@ -84,28 +100,12 @@ void dinodes_list_init(list_t **hierarhy_list,char* current_dir){
 	list_create(&(cwd_din->dentry_list),sizeof(dentry),free);
 	list_enqueue(cwd_din->dentry_list,cwdidx);
 
-	//Create-Init the first pseudoroot dinode
-	dinode* pseudoroot = (dinode*)malloc(sizeof(dinode));
-	pseudoroot->dinode_number = 0;
-
-	//Create the list with one dentry element for pseudoroot
-	//Init first index to cwd in the pseudoroot
-	dentry *rootindex = (dentry*)malloc(sizeof(dentry));
-	strcpy((rootindex->tuple_entry[0]).filename,current_dir);
-	(rootindex->tuple_entry[0]).dinode_num = 1;
-	(rootindex->tuple_entry[0]).dinode_idx = cwd_din;
-	rootindex->length = 1;
-	//Enqueue the dentry of pseudo root in the dinode of pseudoroot
-	list_create(&(pseudoroot->dentry_list),sizeof(dentry),free);
-	list_enqueue(pseudoroot->dentry_list,rootindex);
-
 	//Create the first 2 nodes of the hierarchy list of dinodes
-	list_create(hierarhy_list,sizeof(dinode),free);
-	list_enqueue(*hierarhy_list,pseudoroot);
-	list_enqueue(*hierarhy_list,cwd_din);
+	list_enqueue(hierarhy_list,pseudoroot);
+	list_enqueue(hierarhy_list,cwd_din);
 
 }
-void insert_hierarchical_rec(list_t ** hierarhy_list,dinode* leafdinode,char* filepath,arc_header* hdr,int archive_fd){
+void insert_hierarchical_rec(list_t * hierarhy_list,dinode* leafdinode,char* filepath,arc_header* hdr,int archive_fd){
 	struct stat buffer;
 	lstat(filepath,&buffer);
 	if(S_ISREG(buffer.st_mode)){
@@ -135,16 +135,20 @@ void insert_hierarchical_rec(list_t ** hierarhy_list,dinode* leafdinode,char* fi
 					//INIT THE STATS OF THE FILE
 					dinode_stat_init(newdinode,buffer);
 					list_create(&(newdinode->dentry_list),sizeof(dentry),free);
+
 					dentry *init_entry = (dentry*)malloc(sizeof(dentry));
 					init_entry->length = 2;
 					strcpy((init_entry->tuple_entry[0]).filename,".");
+					(init_entry->tuple_entry[0]).dinode_num = 3068;
 					(init_entry->tuple_entry[0]).dinode_idx = newdinode;
 					strcpy((init_entry->tuple_entry[1]).filename,"..");
-					//(init_entry->tuple_entry[1]).dinode_idx = lastdinode;
+					(init_entry->tuple_entry[1]).dinode_num = 3068;
+					(init_entry->tuple_entry[1]).dinode_idx = NULL;
 					list_enqueue(newdinode->dentry_list,init_entry);
 					
 					if(last_dentry->length < DENTRIES_NUM){
 						strcpy((last_dentry->tuple_entry[last_dentry->length]).filename,dp->d_name);
+						(last_dentry->tuple_entry[last_dentry->length]).dinode_num= 1024;
 						(last_dentry->tuple_entry[last_dentry->length]).dinode_idx = newdinode;
 						last_dentry->length++; 
 					}
@@ -152,10 +156,11 @@ void insert_hierarchical_rec(list_t ** hierarhy_list,dinode* leafdinode,char* fi
 						dentry* new_dentry = (dentry*)malloc(sizeof(dentry));
 						new_dentry->length = 1;
 						strcpy((new_dentry->tuple_entry[0]).filename,dp->d_name);
+						(new_dentry->tuple_entry[0]).dinode_num = 1024;
 						(new_dentry->tuple_entry[0]).dinode_idx = newdinode;
 						list_enqueue(leafdinode->dentry_list,new_dentry);
 					}
-					list_enqueue(*hierarhy_list,newdinode);
+					list_enqueue(hierarhy_list,newdinode);
 					char rec_path[PATH_MAX];
 					sprintf(rec_path,"%s/%s",filepath,dp->d_name);
 					insert_hierarchical_rec(hierarhy_list,newdinode,rec_path,hdr,archive_fd);
@@ -166,7 +171,7 @@ void insert_hierarchical_rec(list_t ** hierarhy_list,dinode* leafdinode,char* fi
 	return;
 }
 
-void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path,arc_header* hdr,int archive_fd){
+void insert_hierarchical(list_t *hierarhy_list,char* insert_file_path,arc_header* hdr,int archive_fd){
 	char initial_path[PATH_MAX];
 	strcpy(initial_path,insert_file_path);
 	if(!strcmp(insert_file_path,"")){
@@ -174,7 +179,7 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path,arc_heade
 		list_iter_t *dinode_iter;
 		list_iter_t *dentries_iter;
 		list_iter_create(&dinode_iter);
-		list_iter_init(dinode_iter,*hierarhy_list,FORWARD);
+		list_iter_init(dinode_iter,hierarhy_list,FORWARD);
 		dinode *current_din = (dinode*)list_iter_next(dinode_iter);
 		list_iter_create(&dentries_iter);
 		list_iter_init(dentries_iter,current_din->dentry_list,FORWARD);
@@ -189,9 +194,11 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path,arc_heade
 	else{
 		list_iter_t *dinode_iter;
 		list_iter_t *dentries_iter;
+		
 		list_iter_create(&dinode_iter);
-		list_iter_init(dinode_iter,*hierarhy_list,FORWARD);
+		list_iter_init(dinode_iter,hierarhy_list,FORWARD);
 		dinode *current_din = (dinode*)list_iter_next(dinode_iter);
+
 		list_iter_create(&dentries_iter);
 		list_iter_init(dentries_iter,current_din->dentry_list,FORWARD);
 		dentry *current_den = (dentry*)list_iter_next(dentries_iter);
@@ -215,10 +222,13 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path,arc_heade
 					if(!strcmp((current_den->tuple_entry[i]).filename,path_token)){
 						//Found in the entry table
 						found = 1;
+						lastdinode = (current_den->tuple_entry[i]).dinode_idx;
 						current_din = (current_den->tuple_entry[i]).dinode_idx;
-						lastdinode = current_din;
+						//lastdinode = current_din;
+						break;
 					}
 				}
+				if(found) break;
 			}
 			if(found == 0){
 				//The path token is not in the hierarhy
@@ -230,18 +240,23 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path,arc_heade
 				//TODO: INIT THE STATS OF THE FILE
 				lstat(current_path,&buffer);
 				dinode_stat_init(newdinode,buffer);				
+
 				list_create(&(newdinode->dentry_list),sizeof(dentry),free);
 				dentry *init_entry = (dentry*)malloc(sizeof(dentry));
 				init_entry->length = 2;
 				strcpy((init_entry->tuple_entry[0]).filename,".");
+				(init_entry->tuple_entry[0]).dinode_num = 2056;
 				(init_entry->tuple_entry[0]).dinode_idx = newdinode;
 				strcpy((init_entry->tuple_entry[1]).filename,"..");
-				(init_entry->tuple_entry[1]).dinode_idx = lastdinode;
+				(init_entry->tuple_entry[1]).dinode_num = 2056;
+				(init_entry->tuple_entry[1]).dinode_idx = NULL;
+				
 				list_enqueue(newdinode->dentry_list,init_entry);
 
 				if(current_den->length < DENTRIES_NUM){
 					//Put it in this dentry element
 					strcpy((current_den->tuple_entry[current_den->length]).filename,path_token);
+					(current_den->tuple_entry[current_den->length]).dinode_num = 1024;
 					(current_den->tuple_entry[current_den->length]).dinode_idx = newdinode;
 					current_den->length++; 
 				}
@@ -249,11 +264,12 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path,arc_heade
 					dentry* new_dentry = (dentry*)malloc(sizeof(dentry));
 					new_dentry->length = 1;
 					strcpy((new_dentry->tuple_entry[0]).filename,path_token);
+					(new_dentry->tuple_entry[0]).dinode_num = 1024;
 					(new_dentry->tuple_entry[0]).dinode_idx = newdinode;
 					list_enqueue(current_din->dentry_list,new_dentry);
 				}
 				lastdinode = newdinode;
-				list_enqueue(*hierarhy_list,newdinode);
+				list_enqueue(hierarhy_list,newdinode);
 				current_din = newdinode;
 			}
 			path_token = strtok(NULL, "/\n");
@@ -272,7 +288,7 @@ void insert_hierarchical(list_t **hierarhy_list,char* insert_file_path,arc_heade
 	}
 }
 
-int create_hierarchical(list_t *filelist, list_t** hierarhy_list,arc_header* hdr,int archive_fd){
+int create_hierarchical(list_t *filelist, list_t* hierarhy_list,arc_header* hdr,int archive_fd){
 	char *cwd = (char*)malloc(PATH_MAX*sizeof(char));
 	char *current_dir;
 	if(get_current_dir(&cwd,&current_dir) < 0){
