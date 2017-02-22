@@ -1,85 +1,54 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include "parse.h"
-#include "help.h"
-#include <inttypes.h>
-#include "meta.h"
-#include "convert.h"
-#include "search.h"
 #include "metadata.h"
-
 #include "metadata_disk.h"
-#define ARGNUM 4
-typedef struct convert_node
+#include "list.h"
+
+
+
+off_t list_array_size(list_t *dinodes)
 {
-    entry *_entry;
-    off_t off;
-} convert_node;
+    list_iter_t *iter;
+    list_iter_create(&iter);
+    list_iter_init(iter,dinodes,FORWARD);
 
-int main(int argc, char** argv){
+    off_t total_size = 0;
+    dinode *di_n;
 
-	//Defining functionality of the programm according command line
-	options choices;
-	char* archive;
-	list_t *filelist;
-	if(parse(argc,argv,&choices,&archive,&filelist) < 0){
-		printhelp();
-		return -2;
-	}
+    while((di_n=(dinode*)list_iter_next(iter))!=NULL) 
+        total_size += sizeof(dinode_disk) + 
+            list_get_len(di_n->dentry_list) * sizeof(dentry_disk);
 
-	//Option j can be called only along -c or -a
-	if(choices.j){
-		if(!choices.c && !choices.a){
-			perror("Flag -j can only be used along with flag -c or -a\n");
-			return -3;
-		}
-	}
-	
-	list_t* hierarchical_list;
-	
-	arc_header hdr;
-	header_init(&hdr);
-	//WARNING NOT TO FORGET TO CHANGE IT IN THE APPEND
+    list_iter_destroy(&iter);
 
-	int archive_fd = open(archive,O_CREAT|O_RDWR,0644);
-	if(archive_fd <0) return -4;
-	//WARNING WITH ARCHIVE FILE o_create
+    return total_size;
+}
+/*
+void list_to_array(list_t *dinodes,char *array) 
+{
+    
+    list_iter_t *hier_iter;
+    list_iter_create(&hier_iter);
+    list_iter_init(hier_iter,dinodes,FORWARD);
+    dinode* current;
 
-	list_create(&hierarchical_list,sizeof(dinode),free);
-	create_hierarchical(filelist,hierarchical_list,&hdr,archive_fd);
-
-	list_iter_t *hier_iter;
-	list_iter_create(&hier_iter);
-	list_iter_init(hier_iter,hierarchical_list,FORWARD);
-	dinode* current;
-
-	list_iter_t* dentries_iter;
-	list_iter_create(&dentries_iter);
-	dentry* current_dentry;
-	int i;
-
-	//PRINT LIST
-	/*list_iter_init(hier_iter,hierarchical_list,FORWARD);
-	printf("Size of list is %d\n",list_get_len(hierarchical_list));
-	while((current = list_iter_next(hier_iter)) != NULL){
-		list_iter_init(dentries_iter,current->dentry_list,FORWARD);
-		while((current_dentry = list_iter_next(dentries_iter))!= NULL){
-			printf("The length is %d\n",current_dentry->length);
-			for(i=0;i<current_dentry->length;i++){
-				printf("File %d: %s\n",i,(current_dentry->tuple_entry[i]).filename);
-			}
-		}
-	}*/
+    list_iter_t* dentries_iter;
+    list_iter_create(&dentries_iter);
+    dentry* current_dentry;
+    int i;
+    while((current = list_iter_next(hier_iter)) != NULL){
+        list_iter_init(dentries_iter,current->dentry_list,FORWARD);
+        while((current_dentry = list_iter_next(dentries_iter))!= NULL){
+            printf("The length is %d\n",current_dentry->length);
+            for(i=0;i<current_dentry->length;i++){
+                printf("File %d: %s\n",i,(current_dentry->tuple_entry[i]).filename);
+            }
+        }
+    }
+    list_iter_destroy(&hier_iter);
 
 
-	char* array = (char*)malloc(list_array_size(hierarchical_list)*sizeof(char));
-	//List To Array
-	list_iter_t *di_iter;
+    list_iter_t *di_iter;
     list_iter_create(&di_iter);
-    list_iter_init(di_iter,hierarchical_list,FORWARD);
+    list_iter_init(di_iter,dinodes,FORWARD);
     dinode *di_n = (dinode*)list_iter_next(di_iter);
 
     list_iter_t *de_iter;
@@ -126,7 +95,8 @@ int main(int argc, char** argv){
                 if (!strcmp(en->filename,".") || !strcmp(en->filename,"..")) continue;
                 //off_t entry_off = dinode_off;
                 entries[i].dinode_off = entry_off;
-                entry_off += sizeof(dinode_disk) + list_get_len(en->dinode_idx->dentry_list)*sizeof(dentry_disk);
+                printf("Current %s",entries[i].filename);
+                entry_off += sizeof(dinode_disk) + list_get_len(en->dinode_idx->dentry_list);
                 list_enqueue(queue,en->dinode_idx);
             }
             memcpy(&(de_d.tuple_entry),entries,DENTRIES_NUM*sizeof(entry_disk));
@@ -138,15 +108,11 @@ int main(int argc, char** argv){
     list_iter_destroy(&di_iter);
     list_iter_destroy(&de_iter);
     list_destroy(&queue);
-	
-    tree_print(array);
-    printf("Query result:%d\n",query(array,"blocks/metadata.h"));
+}
 
-	//Array to list
-
-    list_t *newhlist;
-
-    list_create(&newhlist,sizeof(dinode),free);
+void array_to_list(char *array,list_t **dinodes)
+{
+    list_create(dinodes,sizeof(dinode),free);
 
     list_t *stack;
     list_create(&stack,sizeof(convert_node),free);
@@ -159,10 +125,12 @@ int main(int argc, char** argv){
     while(list_get_len(stack)) {
         convert_node cnode;
         list_pop(stack,&cnode);
-        dinode_disk *di_d = (dinode_disk*)(array + cnode.off);
+        dinode_disk *di_d = (dinode_disk*)array + cnode.off;
+        printf("Cnodeoff %jd\n",cnode.off);
+
         dinode *di = malloc(sizeof(dinode));
         if (cnode._entry != NULL) (cnode._entry)->dinode_idx = di;
-        list_enqueue(newhlist,di);
+        list_enqueue(*dinodes,di);
 
         di->dinode_number = di_d->dinode_number;
         di->permissions = di_d->permissions;
@@ -176,13 +144,14 @@ int main(int argc, char** argv){
         list_create(&(di->dentry_list),sizeof(dentry),free);
 
         size_t n_dentries = di_d->n_dentries;
-        dentry_disk *de_d = (dentry_disk*)((char*)di_d + sizeof(dinode_disk));
+        dentry_disk *de_d = (dentry_disk*)(di_d + sizeof(dinode_disk));
 
         unsigned int i;
         for (i=0;i<n_dentries;++i){
 
             dentry *de = malloc(sizeof(dentry));
             de->length = de_d->length;
+
             unsigned int j;
             for (j=0;j<de_d->length;++j) {
                 entry_disk *en_d = &(de_d->tuple_entry[j]);
@@ -191,7 +160,6 @@ int main(int argc, char** argv){
                 strcpy(en->filename,en_d->filename);
                 en->dinode_num = en_d->dinode_num;
 
-                if (!strcmp(en_d->filename,".") || !strcmp(en_d->filename,"..")) continue;
                 convert_node *cv = malloc(sizeof(convert_node));
                 cv->off = en_d->dinode_off;
                 cv->_entry = en;
@@ -199,38 +167,9 @@ int main(int argc, char** argv){
                 list_push(stack,cv);
             }
             list_enqueue(di->dentry_list,de);
-            de_d = (dentry_disk*)((char*)de_d + (sizeof(dentry_disk)));
+            de_d += (sizeof(dentry_disk));
         }
     }
     list_destroy(&stack);
-
-    printf("~~~~~~~~~~~~~~~~\n");
-
-    //BACK TO THE ORIGINAL
-    //PRINT LIST
-    /*list_iter_init(hier_iter,newhlist,FORWARD);
-	printf("Size of list is %d\n",list_get_len(newhlist));
-	while((current = list_iter_next(hier_iter)) != NULL){
-		list_iter_init(dentries_iter,current->dentry_list,FORWARD);
-		while((current_dentry = list_iter_next(dentries_iter))!= NULL){
-			printf("The length is %d\n",current_dentry->length);
-			for(i=0;i<current_dentry->length;i++){
-				printf("File %d: %s\n",i,(current_dentry->tuple_entry[i]).filename);
-			}
-		}
-	}*/
-
-	//DESTROY
-    list_iter_init(hier_iter,hierarchical_list,FORWARD);
-	while((current = list_iter_next(hier_iter)) != NULL){
-		list_destroy(&(current->dentry_list));
-	}
-	list_iter_destroy(&hier_iter);
-	list_destroy(&filelist);
-	list_destroy(&hierarchical_list);
-	
-	free(array);
-	header_write(&hdr,archive_fd);
-	close(archive_fd);
-	return 0;
 }
+*/
