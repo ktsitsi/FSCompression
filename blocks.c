@@ -213,5 +213,6 @@ off_t metadata_archive(arc_header *hdr,char *metadata,size_t meta_size,int fd_ar
         return -1;
     }
 
-    return lseek(fd_arc,0,SEEK_CUR);
+    hdr->total = lseek(fd_arc,0,SEEK_END)+1;
+    return true_size;
 }

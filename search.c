@@ -15,7 +15,7 @@ typedef struct stack_node
     unsigned int depth;
 } stack_node;
 
-void tree_print(char *metadata) 
+void tree_print(char *metadata,int info) 
 {
     list_t *stack;
     list_create(&stack,sizeof(stack_node),free);
@@ -35,13 +35,28 @@ void tree_print(char *metadata)
         list_pop(stack,&cur_node); 
 
         entry_disk *en = cur_node._entry;
-        unsigned int i;
-        for (i=0;i<cur_node.depth;++i) printf("----");
-        printf("%s\n",en->filename);
+        
 
         di_n = (dinode_disk*)(metadata + en->dinode_off);
         size_t n_dentries = di_n->n_dentries;
         d_en = (dentry_disk*)((char*)di_n + sizeof(dinode_disk));
+
+        
+        unsigned int i;
+        if (!info) {
+            for (i=0;i<cur_node.depth;++i) printf("-------");
+            printf("%s\n",en->filename);
+
+        } else {
+            printf("Filename :%s\n",en->filename);
+            printf("Dinode number :%ju\n",(uintmax_t)(di_n->dinode_number));
+            printf("Permissions :%3o\n",(di_n->permissions)&0777);
+            printf("User Id :%ju\n",(uintmax_t)(di_n->user_id));
+            printf("Group Id :%ju\n",(uintmax_t)(di_n->group_id));
+            printf("Time of access :%ju\n",(uintmax_t)(di_n->time_of_access));
+            printf("\n\n");
+        }
+
 
         for (i=0;i<n_dentries;++i){
             unsigned int j;

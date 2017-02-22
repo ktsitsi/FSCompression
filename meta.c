@@ -113,6 +113,8 @@ void insert_hierarchical_rec(list_t * hierarhy_list,dinode* leafdinode,char* fil
 		int fd = open(filepath,O_CREAT|O_RDWR,0644);
 		if(fd<0) printf("Couldn't open the file\n");
 		leafdinode->file_off = file_archive(hdr,fd,archive_fd);
+
+		printf("ARCHIVE\n");
 		close(fd);
 		//regular file create the dinode and assign data offset
 		return;
@@ -283,20 +285,24 @@ void insert_hierarchical(list_t *hierarhy_list,char* insert_file_path,arc_header
 		printf("The recfilepath given is %s\n",rec_filepath_arg);
 		insert_hierarchical_rec(hierarhy_list,lastdinode,rec_filepath_arg,hdr,archive_fd);
 		//Decide if the leaf node is file or dir
+
+		printf("RETURN FROM THE DEAD\n");
 		list_iter_destroy (&dinode_iter);
 		list_iter_destroy (&dentries_iter);
+
+		printf("WELCOME\n");
 	}
 }
 
-int create_hierarchical(list_t *filelist, list_t* hierarhy_list,arc_header* hdr,int archive_fd){
+int create_hierarchical(list_t *filelist, list_t* hierarhy_list,arc_header* hdr,int archive_fd,int operation){
 	char *cwd = (char*)malloc(PATH_MAX*sizeof(char));
 	char *current_dir;
 	if(get_current_dir(&cwd,&current_dir) < 0){
 		return -1;
 	}
 	//Initialize dinode list with 2 first naive nodes of pseudo and cwd
-	dinodes_list_init(hierarhy_list,current_dir);
-	
+	if(operation)
+		dinodes_list_init(hierarhy_list,current_dir);
 	list_iter_t *file_iterator;
 	list_iter_create(&file_iterator);
 	list_iter_init(file_iterator,filelist,FORWARD);
@@ -335,5 +341,6 @@ int create_hierarchical(list_t *filelist, list_t* hierarhy_list,arc_header* hdr,
 
 	list_iter_destroy(&file_iterator);
 	free(cwd);
+	printf("TAKE ME DOWN\n");
 	return 0;
 }

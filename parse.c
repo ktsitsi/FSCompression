@@ -3,11 +3,21 @@
 #include <string.h>
 #include <stdio.h>
 
+void init_choices(options* choices){
+	choices->c = 0;
+	choices->a = 0;
+	choices->x = 0;
+	choices->j = 0;
+	choices->d = 0;
+	choices->m = 0;
+	choices->q = 0;
+	choices->p = 0;
+}
 int parse(int argc, char** argv, options* choices, char** archive,list_t** filelist){
 	
 	list_t *arglist;
 	list_create(&arglist,sizeof(flag_argument),free);
-	flag_argument *oargument, temp_argument;
+	flag_argument *oargument, *temp_argument;
 	int number_of_flags = 0;
 
 	//Searching for flags validity, count them, enqueue them
@@ -15,7 +25,7 @@ int parse(int argc, char** argv, options* choices, char** archive,list_t** filel
 	for(i=1; i<argc; i++){
 		if(argv[i][0] == '-'){
 			//This is flag
-			if(strcmp(argv[i],"-c") && strcmp(argv[i],"-a") && strcmp(argv[i],"-x") && strcmp(argv[i],"-m") && strcmp(argv[i],"-d") && strcmp(argv[i],"-p") && strcmp(argv[i],"-j")){
+			if(strcmp(argv[i],"-c") && strcmp(argv[i],"-a") && strcmp(argv[i],"-x") && strcmp(argv[i],"-m") && strcmp(argv[i],"-q") && strcmp(argv[i],"-p") && strcmp(argv[i],"-j")){
 				perror("Wrong argument flag type\n");
 				printhelp();
 				return -1;
@@ -38,30 +48,34 @@ int parse(int argc, char** argv, options* choices, char** archive,list_t** filel
 	}
 
 	//Recognize the flag list and initialize the options struct to store them
-	while(list_get_len(arglist) != 0){
-		list_dequeue(arglist,&temp_argument);
-		if(!strcmp(temp_argument.type,"-c")){
+	init_choices(choices);
+	list_iter_t* iter;
+	list_iter_create(&iter);
+	list_iter_init(iter,arglist,FORWARD);
+	while((temp_argument = list_iter_next(iter)) != NULL){
+		if(!strcmp(temp_argument->type,"-c")){
 			choices->c = 1;
 		}
-		else if(!strcmp(temp_argument.type,"-a")){
+		else if(!strcmp(temp_argument->type,"-a")){
 			choices->a = 1;
 		}
-		else if(!strcmp(temp_argument.type,"-x")){
+		else if(!strcmp(temp_argument->type,"-x")){
 			choices->x = 1;
 		}
-		else if(!strcmp(temp_argument.type,"-m")){
+		else if(!strcmp(temp_argument->type,"-m")){
 			choices->m = 1;
 		}
-		else if(!strcmp(temp_argument.type,"-d")){
-			choices->d = 1;
+		else if(!strcmp(temp_argument->type,"-q")){
+			choices->q = 1;
 		}
-		else if(!strcmp(temp_argument.type,"-p")){
+		else if(!strcmp(temp_argument->type,"-p")){
 			choices->p = 1;
 		}
-		else if(!strcmp(temp_argument.type,"-j")){
+		else if(!strcmp(temp_argument->type,"-j")){
 			choices->j = 1;
 		}
 	}
+	list_iter_destroy(&iter);
 	list_destroy(&arglist);
 	//Store the destination archive file
 	*archive = argv[number_of_flags + 1];
